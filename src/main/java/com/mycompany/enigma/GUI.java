@@ -5,13 +5,20 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClients;
+
 public class GUI extends JFrame {
     private final JComboBox<String> operationSelector;
     private final JComboBox<String> algorithmSelector;
     private final JTextArea inputText;
     private final JTextArea outputText;
+    private final EncryptManager encryptorManager = new EncryptManager();
 
     public GUI() {
+        
         setTitle("Enigma");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 700); // Ajuste el tamaño según sea necesario
@@ -30,7 +37,7 @@ public class GUI extends JFrame {
         algorithmLabel.setBounds(20, 60, 80, 25);
         add(algorithmLabel);
 
-        String[] algorithms = {"Algoritmo 1", "Algoritmo 2", "Algoritmo 3"}; // Reemplaza con tus algoritmos
+        String[] algorithms = {"Cesar", "Llave", "Vigenere","PalabraInversa","MensajeInverso","CodigoTelefonico","Binario","RSA","DES","AES"};
         algorithmSelector = new JComboBox<>(algorithms);
         algorithmSelector.setBounds(110, 60, 120, 25);
         add(algorithmSelector);
@@ -66,43 +73,132 @@ public class GUI extends JFrame {
         emailButton.setBounds(20, 520, 220, 25);
         add(emailButton);
 
-        // Acción al presionar el botón "Aplicar Algoritmo"
+        
         applyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Aquí se puede implementar la lógica para aplicar el algoritmo seleccionado
-                // Utiliza operationSelector.getSelectedIndex() para obtener el índice de la operación seleccionada
-                // y algorithmSelector.getSelectedIndex() para obtener el índice del algoritmo seleccionado
-                // Luego, realiza el cifrado o descifrado y actualiza el campo outputText con el resultado
-                // Puedes utilizar bibliotecas de cifrado como javax.crypto para implementar los algoritmos
-                // No se incluye la implementación real aquí por simplicidad del ejemplo.
+                String selectedAlgorithm = (String) algorithmSelector.getSelectedItem();
+                String input = inputText.getText();
+                String output = "";
+
+                try {
+                    switch (selectedAlgorithm) {
+                        case "Cesar":
+                            if (operationSelector.getSelectedIndex() == 0) {
+                                output = encryptorManager.c.encrypt(input);
+                            } else {
+                                output = encryptorManager.c.decrypt(input);
+                            }
+                            break;
+                        case "Llave":
+                            if (operationSelector.getSelectedIndex() == 0) {
+                                output = encryptorManager.l.encrypt(input,"tango");
+                            } else {
+                                output = encryptorManager.l.decrypt(input,"tango");
+                            }
+                            break;
+                        case "Vigenere":
+                            if (operationSelector.getSelectedIndex() == 0) {
+                                output = encryptorManager.v.encrypt(input,32);
+                            } else {
+                                output = encryptorManager.v.decrypt(input,32);
+                            }
+                            break;
+                        case "PalabraInversa":
+                            if (operationSelector.getSelectedIndex() == 0) {
+                                output = encryptorManager.pi.encrypt(input);
+                            } else {
+                                output = encryptorManager.pi.decrypt(input);
+                            }
+                            break;
+                        case "MensajeInverso":
+                            if (operationSelector.getSelectedIndex() == 0) {
+                                output = encryptorManager.mi.encrypt(input);
+                            } else {
+                                output = encryptorManager.mi.decrypt(input);
+                            }
+                            break;
+                            
+                        case "CodigoTelefonico":
+                            if (operationSelector.getSelectedIndex() == 0) {
+                                output = encryptorManager.ct.encrypt(input);
+                            } else {
+                                output = encryptorManager.ct.decrypt(input);
+                            }
+                            break;
+                        
+                        case "Binario":
+                        if (operationSelector.getSelectedIndex() == 0) {
+                            output = encryptorManager.bin.encrypt(input);
+                        } else {
+                            output = encryptorManager.bin.decrypt(input);
+                        }
+                        break;
+                        
+                        case "RSA":
+                        if (operationSelector.getSelectedIndex() == 0) {
+                            output = encryptorManager.rsa.encrypt(input);
+                        } else {
+                            output = encryptorManager.rsa.decrypt(input);
+                        }
+                        break;
+                        
+                        case "DES":
+                        if (operationSelector.getSelectedIndex() == 0) {
+                            output = encryptorManager.des.encrypt(input);
+                        } else {
+                            output = encryptorManager.des.decrypt(input);
+                        }
+                        break;
+                        
+                        case "AES":
+                        if (operationSelector.getSelectedIndex() == 0) {
+                            output = encryptorManager.aes.encrypt(input);
+                        } else {
+                            output = encryptorManager.aes.decrypt(input);
+                        }
+                        break;
+                        
+                        
+                        // Agregar casos para los demás algoritmos
+                        default:
+                            output = "Algoritmo no válido";
+                    }
+                } catch (Exception ex) {
+                    output = "Error al aplicar el algoritmo";
+                }
+
+                outputText.setText(output);
             }
         });
 
-        // Acción al presionar el botón "Cargar desde Archivo"
+        
+       
         loadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Aquí se puede implementar la lógica para cargar texto desde un archivo
-                // Por ejemplo, abrir un JFileChooser para seleccionar un archivo y cargar su contenido en inputText
-                // No se incluye la implementación real aquí por simplicidad del ejemplo.
-            }
-        });
+                JFileChooser fileChooser = new JFileChooser();
+                int returnValue = fileChooser.showOpenDialog(null);
 
-        // Acción al presionar el botón "Enviar por Correo Electrónico"
-        emailButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Aquí se puede implementar la lógica para abrir una ventana para enviar un correo electrónico
-                // Por ejemplo, abrir una nueva ventana (JFrame) para escribir el correo electrónico
-                JFrame emailFrame = new JFrame("Enviar Correo Electrónico");
-                emailFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                emailFrame.setSize(400, 300);
-                // Añadir componentes para escribir el correo electrónico aquí
-                emailFrame.setVisible(true);
-                // No se incluye la implementación real aquí por simplicidad del ejemplo.
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    java.io.File selectedFile = fileChooser.getSelectedFile();
+
+                    try (java.util.Scanner scanner = new java.util.Scanner(selectedFile)) {
+                        StringBuilder fileContent = new StringBuilder();
+                        while (scanner.hasNextLine()) {
+                            fileContent.append(scanner.nextLine()).append("\n");
+                        }
+                        inputText.setText(fileContent.toString());
+                    } catch (java.io.FileNotFoundException ex) {
+                        JOptionPane.showMessageDialog(null, "Archivo no encontrado");
+                    }
+                }
             }
         });
+        
+        // LOGICA DE CORREO ELECTRONICO
+        
+ 
     }
 
 

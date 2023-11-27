@@ -63,7 +63,7 @@ public class Enigma {
         
         
         
-        //new GUI().setVisible(true);
+        new GUI().setVisible(true);
         
     }
 }

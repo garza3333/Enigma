@@ -1,20 +1,37 @@
 package com.mycompany.enigma;
 
 
+import jakarta.mail.Authenticator;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClients;
 
 public class GUI extends JFrame {
     private final JComboBox<String> operationSelector;
     private final JComboBox<String> algorithmSelector;
     private final JTextArea inputText;
     private final JTextArea outputText;
+    private final JTextField numberField;
+    private final JTextField letterField;
     private final EncryptManager encryptorManager = new EncryptManager();
 
     public GUI() {
@@ -72,6 +89,66 @@ public class GUI extends JFrame {
         JButton emailButton = new JButton("Enviar por Correo Electrónico");
         emailButton.setBounds(20, 520, 220, 25);
         add(emailButton);
+        
+        // Crear un JTextField para introducir el correo electrónico
+        JTextField emailField = new JTextField();
+        emailField.setBounds(250, 520, 170, 25);
+        add(emailField);
+        
+        // Crear un JLabel para etiquetar el campo de texto
+        JLabel numberLabel = new JLabel("Clave Vigenere: ");
+        numberLabel.setBounds(260, 20, 120, 25);
+        add(numberLabel);
+        
+        
+        // Crear un JTextField para introducir solo números
+        numberField = new JTextField();
+        numberField.setBounds(360, 20, 120, 25);
+        add(numberField);
+        
+        // Agregar un DocumentFilter al PlainDocument del JTextField
+        ((AbstractDocument) numberField.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                if (string.matches("[0-9]*")) {
+                    super.insertString(fb, offset, string, attr);
+                }
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                if (text.matches("[0-9]*")) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
+            }
+        });
+        
+        // Crear un JLabel para etiquetar el campo de texto
+        JLabel keywordLabel = new JLabel("Clave Llave: ");
+        keywordLabel.setBounds(260, 60, 120, 25);
+        add(keywordLabel);
+        
+        // Crear un JTextField para introducir solo letras
+        letterField = new JTextField();
+        letterField.setBounds(360, 60, 120, 25);
+        add(letterField);
+        
+        // Agregar un DocumentFilter al PlainDocument del JTextField
+        ((AbstractDocument) letterField.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                if (string.matches("[a-zA-Z]*")) {
+                    super.insertString(fb, offset, string, attr);
+                }
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                if (text.matches("[a-zA-Z]*")) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
+            }
+        });
 
         
         applyButton.addActionListener(new ActionListener() {
@@ -92,16 +169,34 @@ public class GUI extends JFrame {
                             break;
                         case "Llave":
                             if (operationSelector.getSelectedIndex() == 0) {
-                                output = encryptorManager.l.encrypt(input,"tango");
+                                if(!"".equals(letterField.getText())){
+                                    output = encryptorManager.l.encrypt(input,letterField.getText());
+                                }else{
+                                    output = encryptorManager.l.encrypt(input,"tango");
+                                }
+                                
                             } else {
-                                output = encryptorManager.l.decrypt(input,"tango");
+                                if(!"".equals(letterField.getText())){
+                                    output = encryptorManager.l.decrypt(input,letterField.getText());
+                                }else{
+                                    output = encryptorManager.l.decrypt(input,"tango");
+                                }
                             }
                             break;
                         case "Vigenere":
                             if (operationSelector.getSelectedIndex() == 0) {
-                                output = encryptorManager.v.encrypt(input,32);
+                                if(!"".equals(letterField.getText())){
+                                    output = encryptorManager.v.encrypt(input,Integer.parseInt(numberField.getText()));
+                                }else{
+                                    output = encryptorManager.v.encrypt(input,23);
+                                }
+                                
                             } else {
-                                output = encryptorManager.v.decrypt(input,32);
+                                if(!"".equals(letterField.getText())){
+                                    output = encryptorManager.v.decrypt(input,Integer.parseInt(numberField.getText()));
+                                }else{
+                                    output = encryptorManager.v.decrypt(input,23);
+                                }
                             }
                             break;
                         case "PalabraInversa":
@@ -175,6 +270,7 @@ public class GUI extends JFrame {
         
        
         loadButton.addActionListener(new ActionListener() {
+            
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fileChooser = new JFileChooser();
@@ -197,6 +293,92 @@ public class GUI extends JFrame {
         });
         
         // LOGICA DE CORREO ELECTRONICO
+        
+        emailButton.addActionListener(new ActionListener() {
+                
+            @Override    public void actionPerformed(ActionEvent e) {
+                
+                String output = outputText.getText();        
+                String selectedAlgorithm = (String) algorithmSelector.getSelectedItem();
+                String email = emailField.getText();
+                
+                Properties prop = new Properties();
+                prop.put("mail.smtp.auth", true);
+                prop.put("mail.smtp.starttls.enable", "true");
+                prop.put("mail.smtp.host", "smtp.gmail.com");
+                prop.put("mail.smtp.port", "587");
+                prop.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+
+                
+                Session session = Session.getInstance(prop, new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication("proyecto02poo@gmail.com", "ydna gmhv kkci blxo");
+                    }
+                });
+                
+                
+                Message message = new MimeMessage(session);
+                try {
+                    message.setFrom(new InternetAddress(email));
+                } catch (AddressException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                try {
+                    message.setRecipients(
+                            Message.RecipientType.TO, InternetAddress.parse(email));
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                try {
+                    message.setSubject("Enigma Encription/Decription");
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                String msg = "default";
+                if(operationSelector.getSelectedIndex() == 0){
+                    msg = "Mensaje Encriptado ["+selectedAlgorithm+"] : " + output;
+                }else{
+                    msg = "Mensaje Desencriptado ["+selectedAlgorithm+"] : " + output;
+                }
+                
+
+                MimeBodyPart mimeBodyPart = new MimeBodyPart();
+                try {
+                    mimeBodyPart.setContent(msg, "text/html; charset=utf-8");
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                Multipart multipart = new MimeMultipart();
+                try {
+                    multipart.addBodyPart(mimeBodyPart);
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                try {
+                    message.setContent(multipart);
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                try {
+                    Transport.send(message);
+                } catch (MessagingException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+
+                System.out.println("Email sent");
+                
+            
+
+        }});
+        
         
  
     }
